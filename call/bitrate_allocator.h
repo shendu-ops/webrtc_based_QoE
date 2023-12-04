@@ -148,6 +148,13 @@ class BitrateAllocator : public BitrateAllocatorInterface {
   // video send stream.
   static uint8_t GetTransmissionMaxBitrateMultiplier();
 
+
+//(zty,ADD)
+///////////////////////////////////////////////////////
+  // int64_t last_writefile_time_ = -1;
+///////////////////////////////////////////////////////
+
+
   SequenceChecker sequenced_checker_;
   LimitObserver* const limit_observer_ RTC_GUARDED_BY(&sequenced_checker_);
   // Stored in a list to keep track of the insertion order.

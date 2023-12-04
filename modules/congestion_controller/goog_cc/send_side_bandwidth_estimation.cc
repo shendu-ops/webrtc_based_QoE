@@ -287,7 +287,8 @@ void SendSideBandwidthEstimation::SetMinMaxBitrate(DataRate min_bitrate,
   min_bitrate_configured_ =
       std::max(min_bitrate, congestion_controller::GetMinBitrate());
   if (max_bitrate > DataRate::Zero() && max_bitrate.IsFinite()) {
-    max_bitrate_configured_ = std::max(min_bitrate_configured_, max_bitrate);
+    //max_bitrate_configured_ = std::max(min_bitrate_configured_, max_bitrate);   //we change
+    max_bitrate_configured_ = kDefaultMaxBitrate;
   } else {
     max_bitrate_configured_ = kDefaultMaxBitrate;
   }
@@ -362,7 +363,32 @@ void SendSideBandwidthEstimation::UpdatePacketsLost(int packets_lost,
     int64_t expected = expected_packets_since_last_loss_update_;
     last_fraction_loss_ = std::min<int>(lost_q8 / expected, 255);
 
+//(zty,ADD)
+//  if(last_fraction_loss_>50) last_fraction_loss_=0;
+
+///////////////////////////////////////////////////////////////
+
     // Reset accumulators.
+
+  // const char* root = "/storage/emulated/0/zcj/loss_fraction.txt";
+  // FILE* loss_fraction_txt = fopen(root, "a+");
+  // if (loss_fraction_txt) {
+  //   std::string loss_fraction_str = std::to_string(last_fraction_loss_)
+  //   + " " + std::to_string(lost_packets_since_last_loss_update_)
+  //   + " " + std::to_string(expected_packets_since_last_loss_update_) + "\n";
+  //   const char* buf  = loss_fraction_str.data();
+  //   fwrite(buf, std::strlen(buf), 1, loss_fraction_txt);
+  //   int ret = fflush(loss_fraction_txt);
+  //   if (ret != 0){
+  //     RTC_LOG(LS_ERROR) << "mxh loss_fraction_txt flush fail?";
+  //   }
+  //   fclose(loss_fraction_txt);
+  // }
+  // else{
+  //   int errNum = errno;
+  //   RTC_LOG(LS_ERROR) << "mxh loss_fraction_txt fopen fail? root:" << root << "reason: " << strerror(errNum);
+  // }
+
 
     lost_packets_since_last_loss_update_ = 0;
     expected_packets_since_last_loss_update_ = 0;
@@ -580,8 +606,31 @@ DataRate SendSideBandwidthEstimation::MaybeRampupOrBackoff(DataRate new_bitrate,
 }
 
 DataRate SendSideBandwidthEstimation::GetUpperLimit() const {
-  DataRate upper_limit = std::min(delay_based_limit_, receiver_limit_);
+  DataRate upper_limit = std::min(delay_based_limit_, receiver_limit_);   //we change
+  //DataRate upper_limit = receiver_limit_;
   upper_limit = std::min(upper_limit, max_bitrate_configured_);
+
+  // const char* root = "/storage/emulated/0/zcj/getUpperLimit.txt";
+  // FILE* getUpperLimit_txt = fopen(root, "a+");
+  // if (getUpperLimit_txt) {
+  //   std::string getUpperLimit_str = std::to_string(delay_based_limit_.bps()) + "\n";
+  //   const char* buf  = getUpperLimit_str.data();
+  //   fwrite(buf, std::strlen(buf), 1, getUpperLimit_txt);
+  //   int ret = fflush(getUpperLimit_txt);
+  //   if (ret != 0){
+  //     RTC_LOG(LS_ERROR) << "mxh getUpperLimit_txt flush fail?";
+  //   }
+  //   fclose(getUpperLimit_txt);
+  // }
+  // else{
+  //   int errNum = errno;
+  //   RTC_LOG(LS_ERROR) << "mxh getUpperLimit_txt fopen fail? root:" << root << "reason: " << strerror(errNum);
+  // }
+
+
+
+
+
   if (loss_based_bandwidth_estimation_.Enabled() &&
       loss_based_bandwidth_estimation_.GetEstimate() > DataRate::Zero()) {
     upper_limit =
@@ -615,12 +664,56 @@ void SendSideBandwidthEstimation::MaybeLogLossBasedEvent(Timestamp at_time) {
 
 void SendSideBandwidthEstimation::UpdateTargetBitrate(DataRate new_bitrate,
                                                       Timestamp at_time) {
+  
+  // const char* root1 = "/storage/emulated/0/zcj/bwe_bitrate_first.txt";
+  // FILE* bwe_bitrate_first_txt = fopen(root1, "a+");
+  // if (bwe_bitrate_first_txt) {
+  //   std::string bwe_bitrate_first_str = std::to_string(new_bitrate.bps()) 
+  //   + " " +std::to_string(GetUpperLimit().bps()) 
+  //   + " " +std::to_string(min_bitrate_configured_.bps()) 
+  //   + " " +std::to_string(last_fraction_loss_) 
+  //   + " " +std::to_string(last_round_trip_time_.ms())+ "\n";
+  //   const char* buf  = bwe_bitrate_first_str.data();
+  //   fwrite(buf, std::strlen(buf), 1, bwe_bitrate_first_txt);
+  //   int ret = fflush(bwe_bitrate_first_txt);
+  //   if (ret != 0){
+  //     RTC_LOG(LS_ERROR) << "mxh bwe_bitrate_first_txt flush fail?";
+  //   }
+  //   fclose(bwe_bitrate_first_txt);
+  // }
+  // else{
+  //   int errNum = errno;
+  //   RTC_LOG(LS_ERROR) << "mxh bwe_bitrate_first_txt fopen fail? root:" << root1 << "reason: " << strerror(errNum);
+  // }
+
+
   new_bitrate = std::min(new_bitrate, GetUpperLimit());
   if (new_bitrate < min_bitrate_configured_) {
     MaybeLogLowBitrateWarning(new_bitrate, at_time);
     new_bitrate = min_bitrate_configured_;
   }
   current_target_ = new_bitrate;
+
+
+  // const char* root = "/storage/emulated/0/zcj/bwe_bitrate.txt";
+  // FILE* bwe_bitrate_txt = fopen(root, "a+");
+  // if (bwe_bitrate_txt) {
+  //   std::string bwe_bitrate_str = std::to_string(new_bitrate.bps()) 
+  //   + " " +std::to_string(at_time.ms()) + "\n";
+  //   const char* buf  = bwe_bitrate_str.data();
+  //   fwrite(buf, std::strlen(buf), 1, bwe_bitrate_txt);
+  //   int ret = fflush(bwe_bitrate_txt);
+  //   if (ret != 0){
+  //     RTC_LOG(LS_ERROR) << "mxh bwe_bitrate_txt flush fail?";
+  //   }
+  //   fclose(bwe_bitrate_txt);
+  // }
+  // else{
+  //   int errNum = errno;
+  //   RTC_LOG(LS_ERROR) << "mxh bwe_bitrate_txt fopen fail? root:" << root << "reason: " << strerror(errNum);
+  // }
+
+
   MaybeLogLossBasedEvent(at_time);
   link_capacity_.OnRateUpdate(acknowledged_rate_, current_target_, at_time);
 }

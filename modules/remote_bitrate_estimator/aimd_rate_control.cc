@@ -276,8 +276,10 @@ void AimdRateControl::ChangeBitrate(const RateControlInput& input,
   // We limit the new bitrate based on the troughput to avoid unlimited bitrate
   // increases. We allow a bit more lag at very low rates to not too easily get
   // stuck if the encoder produces uneven outputs.
+
+  //(zty,ADD)
   const DataRate troughput_based_limit =
-      1.5 * estimated_throughput + DataRate::KilobitsPerSec(10);
+      15 * estimated_throughput + DataRate::KilobitsPerSec(10);
 
   switch (rate_control_state_) {
     case kRcHold:

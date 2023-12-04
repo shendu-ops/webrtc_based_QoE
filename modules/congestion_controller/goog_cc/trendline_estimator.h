@@ -104,6 +104,14 @@ class TrendlineEstimator : public DelayIncreaseDetectorInterface {
   // Exponential backoff filtering.
   double accumulated_delay_;
   double smoothed_delay_;
+
+  //same frequence different channel
+  int64_t pre_rtp_packet_rtt_;
+  int rtp_packet_count_;
+  int rtp_packet_burst_time_gap_count_;
+  int same_freq_diff_channel_flag_;
+  double pre_accumulated_delay_;
+  double pre_smoothed_delay_;
   // Linear least squares regression.
   std::deque<PacketTiming> delay_hist_;
 

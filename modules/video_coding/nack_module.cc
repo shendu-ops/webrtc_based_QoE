@@ -26,7 +26,8 @@ namespace {
 const int kMaxPacketAge = 10000;
 const int kMaxNackPackets = 1000;
 const int kDefaultRttMs = 100;
-const int kMaxNackRetries = 10;
+//(zty,ADD)
+const int kMaxNackRetries = 50;//10
 const int kProcessFrequency = 50;
 const int kProcessIntervalMs = 1000 / kProcessFrequency;
 const int kMaxReorderedPackets = 128;

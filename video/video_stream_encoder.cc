@@ -16,6 +16,8 @@
 #include <memory>
 #include <numeric>
 #include <utility>
+#include <fstream>
+#include <iostream>
 
 #include "absl/algorithm/container.h"
 #include "absl/types/optional.h"
@@ -854,6 +856,25 @@ void VideoStreamEncoder::OnFrame(const VideoFrame& video_frame) {
   const int kMsToRtpTimestamp = 90;
   incoming_frame.set_timestamp(
       kMsToRtpTimestamp * static_cast<uint32_t>(incoming_frame.ntp_time_ms()));
+
+
+  // const char* root = "/storage/emulated/0/zcj/sender_timestamp.txt";
+  // FILE* sender_timestamp_txt = fopen(root, "a+");
+  // if (sender_timestamp_txt) {
+  //   std::string sender_timestamp_str = std::to_string(incoming_frame.timestamp()) + "\n";
+  //   const char* buf  = sender_timestamp_str.data();
+  //   fwrite(buf, std::strlen(buf), 1, sender_timestamp_txt);
+  //   int ret = fflush(sender_timestamp_txt);
+  //   if (ret != 0){
+  //     RTC_LOG(LS_ERROR) << "mxh sender_timestamp_txt flush fail?";
+  //   }
+  //   fclose(sender_timestamp_txt);
+  // }
+  // else{
+  //   int errNum = errno;
+  //   RTC_LOG(LS_ERROR) << "mxh encoder_output_time_txt fopen fail? root:" << root << "reason: " << strerror(errNum);
+  // }
+
 
   if (incoming_frame.ntp_time_ms() <= last_captured_timestamp_) {
     // We don't allow the same capture time for two frames, drop this one.

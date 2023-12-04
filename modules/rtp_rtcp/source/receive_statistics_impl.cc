@@ -237,6 +237,27 @@ RtcpStatistics StreamStatisticianImpl::CalculateRtcpStatistics() {
       1, "received_seq_max_pkts", clock_->TimeInMilliseconds(),
       (received_seq_max_ - received_seq_first_), ssrc_);
 
+
+  // const char* root = "/storage/emulated/0/zcj/receive_statistics_impl.txt";
+  // FILE* receive_statistics_impl_txt = fopen(root, "a+");
+  // if (receive_statistics_impl_txt) {
+  //   std::string receive_statistics_impl_str = std::to_string(stats.fraction_lost) 
+  //   + " " + std::to_string(stats.packets_lost)
+  //   + " " + std::to_string(stats.jitter) + "\n";
+  //   const char* buf  = receive_statistics_impl_str.data();
+  //   fwrite(buf, std::strlen(buf), 1, receive_statistics_impl_txt);
+  //   int ret = fflush(receive_statistics_impl_txt);
+  //   if (ret != 0){
+  //     RTC_LOG(LS_ERROR) << "mxh receive_statistics_impl_txt flush fail?";
+  //   }
+  //   fclose(receive_statistics_impl_txt);
+  // }
+  // else{
+  //   int errNum = errno;
+  //   RTC_LOG(LS_ERROR) << "mxh receive_statistics_impl_txt fopen fail? root:" << root << "reason: " << strerror(errNum);
+  // }
+
+
   return stats;
 }
 

@@ -1316,6 +1316,39 @@ PacketReceiver::DeliveryStatus Call::DeliverPacket(
     rtc::CopyOnWriteBuffer packet,
     int64_t packet_time_us) {
   RTC_DCHECK_RUN_ON(&configuration_sequence_checker_);
+
+  // const char* root = "/storage/emulated/0/zcj/deliver_rtp.txt";
+  // FILE* deliver_rtp_txt = fopen(root, "a+");
+  // std::string deliver_rtp_str;
+  // if (deliver_rtp_txt) {
+  //   if(media_type==webrtc::MediaType::ANY){
+  //     deliver_rtp_str = std::to_string(0) + " " + std::to_string(packet_time_us) + "\n";
+  //   }
+  //   else if(media_type==webrtc::MediaType::AUDIO){
+  //     deliver_rtp_str = std::to_string(1) + " " + std::to_string(packet_time_us) + "\n";
+  //   }
+  //   else if(media_type==webrtc::MediaType::VIDEO){
+  //     deliver_rtp_str = std::to_string(2) + " " + std::to_string(packet_time_us) + "\n";
+  //   }
+  //   else if(media_type==webrtc::MediaType::DATA){
+  //     deliver_rtp_str = std::to_string(3) + " " + std::to_string(packet_time_us) + "\n";
+  //   }
+  //   else{
+  //     deliver_rtp_str = std::to_string(-1) + " " + std::to_string(packet_time_us) + "\n";
+  //   }
+  //   const char* buf  = deliver_rtp_str.data();
+  //   fwrite(buf, std::strlen(buf), 1, deliver_rtp_txt);
+  //   int ret = fflush(deliver_rtp_txt);
+  //   if (ret != 0){
+  //     RTC_LOG(LS_ERROR) << "mxh deliver_rtp_txt flush fail?";
+  //   }
+  //   fclose(deliver_rtp_txt);
+  // }
+  // else{
+  //   int errNum = errno;
+  //   RTC_LOG(LS_ERROR) << "mxh deliver_rtp_txt fopen fail? root:" << root << "reason: " << strerror(errNum);
+  // }
+
   if (IsRtcp(packet.cdata(), packet.size()))
     return DeliverRtcp(media_type, packet.cdata(), packet.size());
 

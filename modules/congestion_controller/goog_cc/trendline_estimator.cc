@@ -169,6 +169,10 @@ TrendlineEstimator::TrendlineEstimator(
       first_arrival_time_ms_(-1),
       accumulated_delay_(0),
       smoothed_delay_(0),
+      pre_rtp_packet_rtt_(-1),
+      rtp_packet_count_(0),
+      rtp_packet_burst_time_gap_count_(0),
+      same_freq_diff_channel_flag_(-1),  // -1 means initial
       delay_hist_(),
       k_up_(0.0087),
       k_down_(0.039),
@@ -196,7 +200,40 @@ void TrendlineEstimator::UpdateTrendline(double recv_delta_ms,
                                          int64_t send_time_ms,
                                          int64_t arrival_time_ms,
                                          size_t packet_size) {
-  const double delta_ms = recv_delta_ms - send_delta_ms;
+  // const char* root = "/storage/emulated/0/zcj/trendline.txt";
+  // FILE* trendline_txt = fopen(root, "a+");
+  // if (trendline_txt) {
+  //   std::string trendline_str = std::to_string(recv_delta_ms) + " " +
+  //                               std::to_string(send_delta_ms) + " " +
+  //                               std::to_string(send_time_ms) + " " +
+  //                               std::to_string(arrival_time_ms) + "\n";
+  //   const char* buf = trendline_str.data();
+  //   fwrite(buf, std::strlen(buf), 1, trendline_txt);
+  //   int ret = fflush(trendline_txt);
+  //   if (ret != 0) {
+  //     RTC_LOG(LS_ERROR) << "mxh trendline_txt flush fail?";
+  //   }
+  //   fclose(trendline_txt);
+  // } else {
+  //   int errNum = errno;
+  //   RTC_LOG(LS_ERROR) << "mxh trendline_txt fopen fail? root:" << root
+  //                     << "reason: " << strerror(errNum);
+  // }
+
+  pre_accumulated_delay_ = accumulated_delay_;
+  pre_smoothed_delay_ = smoothed_delay_;
+
+  // const double delta_ms = recv_delta_ms - send_delta_ms;
+
+  double delta_ms = recv_delta_ms - send_delta_ms;
+
+  //(zty,ADD)
+  // if(/*same_freq_diff_channel_flag_==2 &&*/ ( delta_ms<-10 || delta_ms>10)){
+  //   RTC_LOG(LS_VERBOSE)<<"STEP into delta_ms=0";
+  //   delta_ms=0;
+  // }
+////////////////////////////////////////////////////////////////////
+
   ++num_of_deltas_;
   num_of_deltas_ = std::min(num_of_deltas_, kDeltaCounterMax);
   if (first_arrival_time_ms_ == -1)
@@ -210,6 +247,90 @@ void TrendlineEstimator::UpdateTrendline(double recv_delta_ms,
                     (1 - smoothing_coef_) * accumulated_delay_;
   BWE_TEST_LOGGING_PLOT(1, "smoothed_delay_ms", arrival_time_ms,
                         smoothed_delay_);
+
+  ////////////same frequence different channel/////////////////////////
+  ++rtp_packet_count_;
+  if (pre_rtp_packet_rtt_ == -1) {
+    pre_rtp_packet_rtt_ = arrival_time_ms - first_arrival_time_ms_;
+  }
+
+  int64_t rtp_packet_rtt = arrival_time_ms - first_arrival_time_ms_;
+  int64_t rtp_packet_time_gap = rtp_packet_rtt - pre_rtp_packet_rtt_;
+  pre_rtp_packet_rtt_ = rtp_packet_rtt;
+  if (rtp_packet_time_gap > 100 && same_freq_diff_channel_flag_ == -1) {
+    ++rtp_packet_burst_time_gap_count_;
+  }
+
+  if(rtp_packet_count_ == 100 && same_freq_diff_channel_flag_ == -1){
+  //   const char* root4 = "/storage/emulated/0/zcj/same_freq_diff_channel.txt";
+  // FILE* same_freq_diff_channel_txt = fopen(root4, "a+");
+  // if (same_freq_diff_channel_txt) {
+  //   std::string same_freq_diff_channel_str =
+  // std::to_string(rtp_packet_burst_time_gap_count_)+ " " +
+  // std::to_string(rtp_packet_count_) + "\n";
+  //   const char* buf  = same_freq_diff_channel_str.data();
+  //   fwrite(buf, std::strlen(buf), 1, same_freq_diff_channel_txt);
+  //   int ret = fflush(same_freq_diff_channel_txt);
+  //   if (ret != 0){
+  //     RTC_LOG(LS_ERROR) << "mxh same_freq_diff_channel_txt flush fail?";
+  //   }
+  //   fclose(same_freq_diff_channel_txt);
+  // }
+  // else{
+  //   int errNum = errno;
+  //   RTC_LOG(LS_ERROR) << "mxh same_freq_diff_channel_txt fopen fail?
+  // root4:" << root4 << "reason: " << strerror(errNum);
+  // }
+
+    if(rtp_packet_burst_time_gap_count_ > 8){
+      same_freq_diff_channel_flag_ = 2; // 2 means different channel
+    }else{
+      same_freq_diff_channel_flag_ = 1; // 1 means same channel
+    }
+    rtp_packet_count_ = 0;
+    rtp_packet_burst_time_gap_count_ = 0;
+  }
+  RTC_LOG(LS_VERBOSE)<<"frequence channel: "<<std::to_string(same_freq_diff_channel_flag_);
+  // same_freq_diff_channel_flag_ = 1;//switch
+  if (same_freq_diff_channel_flag_ == 2 && rtp_packet_time_gap > 100) {
+    //first_arrival_time_ms_ += rtp_packet_time_gap;
+    // accumulated_delay_ = pre_accumulated_delay_;
+    // smoothed_delay_ = pre_smoothed_delay_;
+    num_of_deltas_ = 0;
+    first_arrival_time_ms_ = -1;
+    accumulated_delay_ = 0;
+    smoothed_delay_ = 0;
+    pre_rtp_packet_rtt_ = -1;
+    rtp_packet_count_ = 0;
+    rtp_packet_burst_time_gap_count_ = 0;
+    last_update_ms_ = -1;
+    time_over_using_ = -1;
+    overuse_counter_ = -1;
+    delay_hist_.clear();
+    return;
+  }
+
+  // const char* root10 = "/storage/emulated/0/zcj/trendline_after.txt";
+  // FILE* trendline_after_txt = fopen(root10, "a+");
+  // if (trendline_after_txt) {
+  //   std::string trendline_after_str =
+  //       std::to_string(recv_delta_ms) + " " + std::to_string(send_delta_ms) +
+  //       " " + std::to_string(send_time_ms) + " " +
+  //       std::to_string(arrival_time_ms) + " " +
+  //       std::to_string(first_arrival_time_ms_) + " " +
+  //       std::to_string(same_freq_diff_channel_flag_) + "\n";
+  //   const char* buf = trendline_after_str.data();
+  //   fwrite(buf, std::strlen(buf), 1, trendline_after_txt);
+  //   int ret = fflush(trendline_after_txt);
+  //   if (ret != 0) {
+  //     RTC_LOG(LS_ERROR) << "mxh trendline_after_txt flush fail?";
+  //   }
+  //   fclose(trendline_after_txt);
+  // } else {
+  //   int errNum = errno;
+  //   RTC_LOG(LS_ERROR) << "mxh trendline_after_txt fopen fail? root10:" << root10
+  //                     << "reason: " << strerror(errNum);
+  // }
 
   // Maintain packet window
   delay_hist_.emplace_back(
@@ -235,6 +356,24 @@ void TrendlineEstimator::UpdateTrendline(double recv_delta_ms,
     //   trend == 0    ->  the delay does not change
     //   trend < 0     ->  the delay decreases, queues are being emptied
     trend = LinearFitSlope(delay_hist_).value_or(trend);
+
+    // const char* root2 = "/storage/emulated/0/zcj/trend_number.txt";
+    // FILE* trend_number_txt = fopen(root2, "a+");
+    // if (trend_number_txt) {
+    //   std::string trend_number_str = std::to_string(trend) + "\n";
+    //   const char* buf = trend_number_str.data();
+    //   fwrite(buf, std::strlen(buf), 1, trend_number_txt);
+    //   int ret = fflush(trend_number_txt);
+    //   if (ret != 0) {
+    //     RTC_LOG(LS_ERROR) << "mxh trend_number_txt flush fail?";
+    //   }
+    //   fclose(trend_number_txt);
+    // } else {
+    //   int errNum = errno;
+    //   RTC_LOG(LS_ERROR) << "mxh trend_number_txt fopen fail? root2:" << root2
+    //                     << "reason: " << strerror(errNum);
+    // }
+
     if (settings_.enable_cap) {
       absl::optional<double> cap = ComputeSlopeCap(delay_hist_, settings_);
       // We only use the cap to filter out overuse detections, not
@@ -307,6 +446,39 @@ void TrendlineEstimator::Detect(double trend, double ts_delta, int64_t now_ms) {
     hypothesis_ = BandwidthUsage::kBwNormal;
   }
   prev_trend_ = trend;
+
+  // const char* root2 =
+  //     "/storage/emulated/0/zcj/modified_trend_number_and_status.txt";
+  // FILE* modified_trend_number_and_status_txt = fopen(root2, "a+");
+  // std::string modified_trend_number_str;
+  // if (modified_trend_number_and_status_txt) {
+  //   if (hypothesis_ == BandwidthUsage::kBwNormal) {
+  //     modified_trend_number_str =
+  //         std::to_string(0) + " " + std::to_string(modified_trend) + "\n";
+  //   }
+  //   if (hypothesis_ == BandwidthUsage::kBwUnderusing) {
+  //     modified_trend_number_str =
+  //         std::to_string(1) + " " + std::to_string(modified_trend) + "\n";
+  //   }
+  //   if (hypothesis_ == BandwidthUsage::kBwOverusing) {
+  //     modified_trend_number_str =
+  //         std::to_string(2) + " " + std::to_string(modified_trend) + "\n";
+  //   }
+
+  //   const char* buf = modified_trend_number_str.data();
+  //   fwrite(buf, std::strlen(buf), 1, modified_trend_number_and_status_txt);
+  //   int ret = fflush(modified_trend_number_and_status_txt);
+  //   if (ret != 0) {
+  //     RTC_LOG(LS_ERROR) << "mxh trend_number_txt flush fail?";
+  //   }
+  //   fclose(modified_trend_number_and_status_txt);
+  // } else {
+  //   int errNum = errno;
+  //   RTC_LOG(LS_ERROR)
+  //       << "mxh modified_trend_number_and_status_txt fopen fail? root2:"
+  //       << root2 << "reason: " << strerror(errNum);
+  // }
+
   UpdateThreshold(modified_trend, now_ms);
 }
 

@@ -489,6 +489,28 @@ int VideoReceiveStream2::GetBaseMinimumPlayoutDelayMs() const {
 void VideoReceiveStream2::OnFrame(const VideoFrame& video_frame) {
   VideoFrameMetaData frame_meta(video_frame, clock_->CurrentTime());
 
+//(zty,ADD)
+////////////////////////////////////////////////////////////////
+ const char* root = "/storage/emulated/0/zcj/receiver_side_timestamp_render.txt";
+  FILE* receiver_side_timestamp_render_txt = fopen(root, "a+");
+  if (receiver_side_timestamp_render_txt) {
+    std::string receiver_side_timestamp_render_str = std::to_string(video_frame.timestamp()) + "\n";
+    const char* buf  = receiver_side_timestamp_render_str.data();
+    fwrite(buf, std::strlen(buf), 1, receiver_side_timestamp_render_txt);
+    int ret = fflush(receiver_side_timestamp_render_txt);
+    if (ret != 0){
+      RTC_LOG(LS_ERROR) << "mxh receiver_side_timestamp_render_txt flush fail?";
+    }
+    fclose(receiver_side_timestamp_render_txt);
+  }
+  else{
+    int errNum = errno;
+    RTC_LOG(LS_ERROR) << "mxh encoder_output_time_txt fopen fail? root:" << root << "reason: " << strerror(errNum);
+  }
+
+///////////////////////////////////////////////////////////////////////////////////
+
+
   worker_thread_->PostTask(
       ToQueuedTask(task_safety_, [frame_meta, this]() {
         RTC_DCHECK_RUN_ON(&worker_sequence_checker_);
@@ -639,6 +661,29 @@ void VideoReceiveStream2::StartNextDecode() {
 void VideoReceiveStream2::HandleEncodedFrame(
     std::unique_ptr<EncodedFrame> frame) {
   // Running on |decode_queue_|.
+
+//(zty,ADD)
+///////////////////////////////////////////////////////////////
+ const char* root = "/storage/emulated/0/zcj/receiver_side_timestamp_decoded.txt";
+  FILE* receiver_side_timestamp_decoded_txt = fopen(root, "a+");
+  if (receiver_side_timestamp_decoded_txt) {
+    std::string receiver_side_timestamp_decoded_str = std::to_string(frame->Timestamp()) + "\n";
+    const char* buf  = receiver_side_timestamp_decoded_str.data();
+    fwrite(buf, std::strlen(buf), 1, receiver_side_timestamp_decoded_txt);
+    int ret = fflush(receiver_side_timestamp_decoded_txt);
+    if (ret != 0){
+      RTC_LOG(LS_ERROR) << "mxh receiver_side_timestamp_decoded_txt flush fail?";
+    }
+    fclose(receiver_side_timestamp_decoded_txt);
+  }
+  else{
+    int errNum = errno;
+    RTC_LOG(LS_ERROR) << "mxh encoder_output_time_txt fopen fail? root:" << root << "reason: " << strerror(errNum);
+  }
+
+///////////////////////////////////////////////////////////////
+
+
   int64_t now_ms = clock_->TimeInMilliseconds();
 
   // Current OnPreDecode only cares about QP for VP8.

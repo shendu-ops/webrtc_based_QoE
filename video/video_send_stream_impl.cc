@@ -565,6 +565,29 @@ EncodedImageCallback::Result VideoSendStreamImpl::OnEncodedImage(
   // running in parallel on different threads.
 
   // Indicate that there still is activity going on.
+
+  //(zty,ADD)
+  //////////////////////////////////////////////////////////////////////////
+  const char* root = "/storage/emulated/0/zcj/sender_side_timestamp.txt";
+  FILE* sender_side_timestamp_txt = fopen(root, "a+");
+  if (sender_side_timestamp_txt) {
+    std::string sender_side_timestamp_str = std::to_string(encoded_image.Timestamp()) + "\n";
+    const char* buf  = sender_side_timestamp_str.data();
+    fwrite(buf, std::strlen(buf), 1, sender_side_timestamp_txt);
+    int ret = fflush(sender_side_timestamp_txt);
+    if (ret != 0){
+      RTC_LOG(LS_ERROR) << "mxh sender_side_timestamp_txt flush fail?";
+    }
+    fclose(sender_side_timestamp_txt);
+  }
+  else{
+    int errNum = errno;
+    RTC_LOG(LS_ERROR) << "mxh sender_side_timestamp_txt fopen fail? root:" << root << "reason: " << strerror(errNum);
+  }
+
+  ///////////////////////////////////////////////////////////////////////////
+
+
   activity_ = true;
 
   auto enable_padding_task = [this]() {
@@ -657,6 +680,92 @@ uint32_t VideoSendStreamImpl::OnBitrateUpdated(BitrateAllocationUpdate update) {
 
   DataRate encoder_target_rate = DataRate::BitsPerSec(encoder_target_rate_bps_);
   link_allocation = std::max(encoder_target_rate, link_allocation);
+  
+
+  //(zty.ADD)
+  /////////////////////////////////////////////////////////
+  //add
+  const char* root3 = "/storage/emulated/0/zcj/encoder_target_rate.txt";
+  FILE* encoder_target_rate_txt = fopen(root3, "a+");
+  if (encoder_target_rate_txt) {
+    std::string encoder_target_rate_str = std::to_string(encoder_target_rate.bps()) + "\n";
+
+    const char* buf  = encoder_target_rate_str.data();
+    fwrite(buf, std::strlen(buf), 1, encoder_target_rate_txt);
+    int ret = fflush(encoder_target_rate_txt);
+    if (ret != 0){
+      RTC_LOG(LS_ERROR) << "mxh encoder_target_rate_txt flush fail?";
+    }
+    fclose(encoder_target_rate_txt);
+  }
+  else{
+    int errNum = errno;
+    RTC_LOG(LS_ERROR) << "mxh encoder_target_rate_txt fopen fail? root:" << root3 << "reason: " << strerror(errNum);
+  }
+
+
+  int64_t cur = clock_->TimeInMilliseconds();
+  const char* root = "/storage/emulated/0/zcj/link_allocation.txt";
+  FILE* link_allocation_txt = fopen(root, "a+");
+  if (link_allocation_txt) {
+    std::string link_allocation_str = std::to_string(link_allocation.bps()) + "\n";
+
+    const char* buf  = link_allocation_str.data();
+    fwrite(buf, std::strlen(buf), 1, link_allocation_txt);
+    int ret = fflush(link_allocation_txt);
+    if (ret != 0){
+      RTC_LOG(LS_ERROR) << "mxh link_allocation_txt flush fail?";
+    }
+    fclose(link_allocation_txt);
+  }
+  else{
+    int errNum = errno;
+    RTC_LOG(LS_ERROR) << "mxh link_allocation_txt fopen fail? root:" << root << "reason: " << strerror(errNum);
+  }
+
+//该文件的值使用的是实际编码码率，后续改文件名
+  const char* root2 = "/storage/emulated/0/zcj/encoder_target_rate_copy.txt";
+  FILE* encoder_target_rate_copy_txt = fopen(root2, "a+");
+  if (encoder_target_rate_copy_txt && cur-last_writefile_time_>1000) {
+    last_writefile_time_ = cur;
+
+    int flag;
+    if(encoder_target_rate.bps()<2000000){
+      flag = 1;
+    }
+    else if(encoder_target_rate.bps()<4000000){
+      flag = 2;
+    }
+    else if(encoder_target_rate.bps()<6000000){
+      flag = 3;
+    }
+    else if(encoder_target_rate.bps()<8000000){
+      flag = 4;
+    }
+    else if(encoder_target_rate.bps()<10000000){
+      flag = 5;
+    }
+    else{
+      flag = 6;
+    }
+
+    std::string encoder_target_rate_copy_str = std::to_string(flag) + "\n";
+
+    const char* buf  = encoder_target_rate_copy_str.data();
+    fwrite(buf, std::strlen(buf), 1, encoder_target_rate_copy_txt);
+    int ret = fflush(encoder_target_rate_copy_txt);
+    if (ret != 0){
+      RTC_LOG(LS_ERROR) << "mxh encoder_target_rate_copy_txt flush fail?";
+    }
+    fclose(encoder_target_rate_copy_txt);
+  }
+  else{
+    int errNum = errno;
+    RTC_LOG(LS_ERROR) << "mxh encoder_target_rate_copy_txt fopen fail? root:" << root2 << "reason: " << strerror(errNum);
+  }
+  
+  ///////////////////////////////////////////////////////////
+  
   video_stream_encoder_->OnBitrateUpdated(
       encoder_target_rate, encoder_stable_target_rate, link_allocation,
       rtc::dchecked_cast<uint8_t>(update.packet_loss_ratio * 256),

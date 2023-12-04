@@ -264,12 +264,14 @@ static int GetMaxDefaultVideoBitrateKbps(int width,
   } else if (width * height <= 640 * 480) {
     max_bitrate = 1700;
   } else if (width * height <= 960 * 540) {
-    max_bitrate = 2000;
-  } else {
-    max_bitrate = 2500;
+    max_bitrate = 2500;//2500
+  } else if (width * height <= 1920 * 1080){
+    max_bitrate = 10000;//2500
+  } else{
+    max_bitrate = 20000;//we add
   }
   if (is_screenshare)
-    max_bitrate = std::max(max_bitrate, 1200);
+    max_bitrate = std::max(max_bitrate, 1200);//1200
   return max_bitrate;
 }
 
@@ -1904,6 +1906,29 @@ bool WebRtcVideoChannel::SendRtp(const uint8_t* data,
   rtc::CopyOnWriteBuffer packet(data, len, kMaxRtpPacketLen);
   rtc::PacketOptions rtc_options;
   rtc_options.packet_id = options.packet_id;
+
+  // //(zty,ADD)
+  // //////////////////////////////////////////////////////////////////////////
+  // const char* root = "/storage/emulated/0/zcj/rtp_sendtime.txt";
+  // FILE* rtp_sendtime_txt = fopen(root, "a+");
+  // if (rtp_sendtime_txt) {
+  //   std::string rtp_sendtime_str = std::to_string(time(NULL)) + " " +std::to_string(clock()) + "\n";
+  //   const char* buf  = rtp_sendtime_str.data();
+  //   fwrite(buf, std::strlen(buf), 1, rtp_sendtime_txt);
+  //   int ret = fflush(rtp_sendtime_txt);
+  //   if (ret != 0){
+  //     RTC_LOG(LS_ERROR) << "mxh rtp_sendtime_txt flush fail?";
+  //   }
+  //   fclose(rtp_sendtime_txt);
+  // }
+  // else{
+  //   int errNum = errno;
+  //   RTC_LOG(LS_ERROR) << "mxh rtp_sendtime_txt fopen fail? root:" << root << "reason: " << strerror(errNum);
+  // }
+
+  // ///////////////////////////////////////////////////////////////////////////
+
+
   if (DscpEnabled()) {
     rtc_options.dscp = PreferredDscp();
   }

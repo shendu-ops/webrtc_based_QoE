@@ -15,6 +15,9 @@
 #include <cmath>
 #include <memory>
 #include <utility>
+#include <iostream>
+#include <fcntl.h>
+#include <unistd.h>
 
 #include "absl/algorithm/container.h"
 #include "api/units/data_rate.h"
@@ -334,6 +337,77 @@ std::map<BitrateAllocatorObserver*, int> AllocateBitrates(
     sum_max_bitrates += observer_config.config.max_bitrate_bps;
   }
 
+  // const char* root = "/storage/emulated/0/zcj/bitrate_exim.txt";
+  // FILE* bitrate_exim_txt = fopen(root, "a+");
+  // if (bitrate_exim_txt) {
+  //   std::string bitrate_exim_str = std::to_string(bitrate) + "\n";
+  //   const char* buf  = bitrate_exim_str.data();
+  //   fwrite(buf, std::strlen(buf), 1, bitrate_exim_txt);
+  //   int ret = fflush(bitrate_exim_txt);
+  //   if (ret != 0){
+  //     RTC_LOG(LS_ERROR) << "mxh bitrate_exim_txt flush fail?";
+  //   }
+  //   fclose(bitrate_exim_txt);
+  // }
+  // else{
+  //   int errNum = errno;
+  //   RTC_LOG(LS_ERROR) << "mxh bitrate_exim_txt fopen fail? root:" << root << "reason: " << strerror(errNum);
+  // }
+
+  // int flag;
+  // if(bitrate < 500000){
+  //   flag = 1;
+  // }
+  // else if(bitrate < 1500000){
+  //   flag = 2;
+  // }
+  // else if(bitrate < 4000000){
+  //   flag = 3;
+  // }
+  // else{
+  //   flag = 4;
+  // }
+
+
+  // const char* root = "/storage/emulated/0/zcj/bitrate_exim.txt";
+  // int fd = open(root, O_RDWR|O_APPEND|O_CREAT, 0666);
+  // if(fd != -1){
+  //   struct flock fl;
+  //   fl.l_type = F_WRLCK;
+  //   fl.l_whence = SEEK_SET;
+  //   fl.l_start = 0;
+  //   fl.l_len = 0;
+  //   if(fcntl(fd, F_SETLK, &fl) != -1){
+  //     std::string bitrate_exim_str = std::to_string(bitrate) + "\n";
+  //     const char* buf  = bitrate_exim_str.data();
+  //     write(fd, buf, std::strlen(buf));
+  //     fl.l_type = F_UNLCK;
+  //     fcntl(fd, F_SETLK, &fl);
+  //   }else{
+  //     RTC_LOG(LS_VERBOSE)<<"Failed to lock the file.";
+  //   }
+  //   close(fd);
+  // }else{
+  //   RTC_LOG(LS_VERBOSE)<<"Failed to open the file.";
+  // }
+
+  // const char* root2 = "/storage/emulated/0/zcj/bitrate_exim_copy.txt";
+  // FILE* bitrate_exim_copy_txt = fopen(root2, "a+");
+  // if (bitrate_exim_copy_txt) {
+  //   std::string bitrate_exim_copy_str = std::to_string(bitrate) + "\n";
+  //   const char* buf  = bitrate_exim_copy_str.data();
+  //   fwrite(buf, std::strlen(buf), 1, bitrate_exim_copy_txt);
+  //   int ret = fflush(bitrate_exim_copy_txt);
+  //   if (ret != 0){
+  //     RTC_LOG(LS_ERROR) << "mxh bitrate_exim_copy_txt flush fail?";
+  //   }
+  //   fclose(bitrate_exim_copy_txt);
+  // }
+  // else{
+  //   int errNum = errno;
+  //   RTC_LOG(LS_ERROR) << "mxh bitrate_exim_copy_txt fopen fail? root:" << root2 << "reason: " << strerror(errNum);
+  // }
+
   // Not enough for all observers to get an allocation, allocate according to:
   // enforced min bitrate -> allocated bitrate previous round -> restart paused
   // streams.
@@ -394,6 +468,69 @@ void BitrateAllocator::OnNetworkEstimateChanged(TargetTransferRate msg) {
     RTC_LOG(LS_INFO) << "Current BWE " << last_target_bps_;
     last_bwe_log_time_ = now;
   }
+
+//(zty,ADD)
+//////////////////////////////////////////////////////////////////////
+  // const char* root = "/storage/emulated/0/zcj/bitrate_exim_before_allocate.txt";
+  // FILE* bitrate_exim_txt = fopen(root, "a+");
+  // if (bitrate_exim_txt) {
+  //   std::string bitrate_exim_str = std::to_string(last_target_bps_) + "\n";
+  //   const char* buf  = bitrate_exim_str.data();
+  //   fwrite(buf, std::strlen(buf), 1, bitrate_exim_txt);
+  //   int ret = fflush(bitrate_exim_txt);
+  //   if (ret != 0){
+  //     RTC_LOG(LS_ERROR) << "mxh bitrate_exim_txt flush fail?";
+  //   }
+  //   fclose(bitrate_exim_txt);
+  // }
+  // else{
+  //   int errNum = errno;
+  //   RTC_LOG(LS_ERROR) << "mxh bitrate_exim_txt fopen fail? root:" << root << "reason: " << strerror(errNum);
+  // }
+
+
+  // const char* root2 = "/storage/emulated/0/zcj/bitrate_exim_before_allocate_copy.txt";
+  // FILE* bitrate_exim_before_allocate_copy_txt = fopen(root2, "a+");
+  // if (bitrate_exim_before_allocate_copy_txt && now-last_writefile_time_>1000) {
+  //   last_writefile_time_ = now;
+  //   int flag;
+  //   if(last_target_bps_<1000000){
+  //     flag = 1;
+  //   }
+  //   else if(last_target_bps_<2000000){
+  //     flag = 2;
+  //   }
+  //   else if(last_target_bps_<3000000){
+  //     flag = 3;
+  //   }
+  //   else if(last_target_bps_<4000000){
+  //     flag = 4;
+  //   }
+  //   else if(last_target_bps_<5000000){
+  //     flag = 5;
+  //   }
+  //   else{
+  //     flag = 6;
+  //   }
+  //   std::string bitrate_exim_before_allocate_copy_str = std::to_string(flag) + "\n";
+
+  //   const char* buf  = bitrate_exim_before_allocate_copy_str.data();
+  //   fwrite(buf, std::strlen(buf), 1, bitrate_exim_before_allocate_copy_txt);
+  //   int ret = fflush(bitrate_exim_before_allocate_copy_txt);
+  //   if (ret != 0){
+  //     RTC_LOG(LS_ERROR) << "mxh bitrate_exim_before_allocate_copy_txt flush fail?";
+  //   }
+  //   fclose(bitrate_exim_before_allocate_copy_txt);
+  // }
+  // else{
+  //   int errNum = errno;
+  //   RTC_LOG(LS_ERROR) << "mxh bitrate_exim_before_allocate_copy_txt fopen fail? root:" << root2 << "reason: " << strerror(errNum);
+  // }
+
+
+  last_target_bps_ = 2500000;
+  //last_target_bps_ = 10000000;
+/////////////////////////////////////////////////////////////////////
 
   auto allocation = AllocateBitrates(allocatable_tracks_, last_target_bps_);
   auto stable_bitrate_allocation =

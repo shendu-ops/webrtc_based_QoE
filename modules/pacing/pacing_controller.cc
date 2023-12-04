@@ -29,7 +29,7 @@ namespace webrtc {
 namespace {
 // Time limit in milliseconds between packet bursts.
 constexpr TimeDelta kDefaultMinPacketLimit = TimeDelta::Millis(5);
-constexpr TimeDelta kCongestedPacketInterval = TimeDelta::Millis(500);
+constexpr TimeDelta kCongestedPacketInterval = TimeDelta::Millis(500);//500
 // TODO(sprang): Consider dropping this limit.
 // The maximum debt level, in terms of time, capped when sending packets.
 constexpr TimeDelta kMaxDebtInTime = TimeDelta::Millis(500);
@@ -545,6 +545,19 @@ void PacingController::ProcessPackets() {
       break;
     }
 
+
+    //   if (rtp_packet == nullptr) {
+    //   // No packet available to send, check if we should send padding.
+    //     auto padding_packets =
+    //         packet_sender_->GeneratePadding(DataSize::Bytes(1));//padding_to_add
+    //     if (!padding_packets.empty()) {
+    //       // No padding packets were generated, quite send loop.
+    //       EnqueuePacketInternal(std::move(padding_packets[0]), kFirstPriority+4);
+    //     }
+    //     // Continue loop to send the padding that was just added.
+    //     break;
+    // }
+
     RTC_DCHECK(rtp_packet);
     RTC_DCHECK(rtp_packet->packet_type().has_value());
     const RtpPacketMediaType packet_type = *rtp_packet->packet_type();
@@ -629,9 +642,25 @@ std::unique_ptr<RtpPacketToSend> PacingController::GetPendingPacket(
     return nullptr;
   }
 
+
+  // if (packet_queue_.Empty()) {
+  //   std::vector<std::unique_ptr<RtpPacketToSend>> padding_packets =
+  //     packet_sender_->GeneratePadding(DataSize::Bytes(1)); //padding_to_add changeTo DataSize::Bytes(1)
+  //   for (auto& packet : padding_packets) {
+  //     RTC_LOG(INFO)<<"xxx: enquepacket"<<*packet->packet_type();
+  //     EnqueuePacket(std::move(packet));
+  //   }
+  // }
+
+  // RTC_LOG(INFO)<<"xxx: step out padding packet";
+  // RTC_LOG(INFO)<<"xxx: current queue size: "<<std::to_string(packet_queue_.Size().bytes())<<" packet size "<<packet_queue_.SizeInPackets();
+
+
+
   // First, check if there is any reason _not_ to send the next queued packet.
 
   // Unpaced audio packets and probes are exempted from send checks.
+
   bool unpaced_audio_packet =
       !pace_audio_ && packet_queue_.LeadingAudioPacketEnqueueTime().has_value();
   bool is_probe = pacing_info.probe_cluster_id != PacedPacketInfo::kNotAProbe;

@@ -296,10 +296,10 @@ DelayBasedBwe::Result DelayBasedBwe::MaybeUpdateEstimate(
     has_once_detected_overuse_ = true;
   } else {
     if (probe_bitrate) {
-      result.probe = true;
-      result.updated = true;
-      result.target_bitrate = *probe_bitrate;
-      rate_control_.SetEstimate(*probe_bitrate, at_time);
+      // result.probe = true;
+      // result.updated = true;
+      // result.target_bitrate = *probe_bitrate;
+      // rate_control_.SetEstimate(*probe_bitrate, at_time);
     } else {
       result.updated =
           UpdateEstimate(at_time, acked_bitrate, &result.target_bitrate);
