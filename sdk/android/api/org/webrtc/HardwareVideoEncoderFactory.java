@@ -11,7 +11,7 @@
 package org.webrtc;
 
 import static org.webrtc.MediaCodecUtils.EXYNOS_PREFIX;
-import static org.webrtc.MediaCodecUtils.INTEL_PREFIX;
+// import static org.webrtc.MediaCodecUtils.INTEL_PREFIX;
 import static org.webrtc.MediaCodecUtils.QCOM_PREFIX;
 
 import android.media.MediaCodecInfo;
@@ -209,12 +209,13 @@ public class HardwareVideoEncoderFactory implements VideoEncoderFactory {
   private boolean isHardwareSupportedInCurrentSdkVp8(MediaCodecInfo info) {
     String name = info.getName();
     // QCOM Vp8 encoder is supported in KITKAT or later.
-    return (name.startsWith(QCOM_PREFIX) && Build.VERSION.SDK_INT >= Build.VERSION_CODES.KITKAT)
-        // Exynos VP8 encoder is supported in M or later.
-        || (name.startsWith(EXYNOS_PREFIX) && Build.VERSION.SDK_INT >= Build.VERSION_CODES.M)
-        // Intel Vp8 encoder is supported in LOLLIPOP or later, with the intel encoder enabled.
-        || (name.startsWith(INTEL_PREFIX) && Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP
-               && enableIntelVp8Encoder);
+    // return (name.startsWith(QCOM_PREFIX) && Build.VERSION.SDK_INT >= Build.VERSION_CODES.KITKAT)
+    //     // Exynos VP8 encoder is supported in M or later.
+    //     || (name.startsWith(EXYNOS_PREFIX) && Build.VERSION.SDK_INT >= Build.VERSION_CODES.M)
+    //     // Intel Vp8 encoder is supported in LOLLIPOP or later, with the intel encoder enabled.
+    //     || (name.startsWith(INTEL_PREFIX) && Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP
+    //            && enableIntelVp8Encoder);
+    return true;
   }
 
   private boolean isHardwareSupportedInCurrentSdkVp9(MediaCodecInfo info) {
@@ -229,12 +230,13 @@ public class HardwareVideoEncoderFactory implements VideoEncoderFactory {
     if (H264_HW_EXCEPTION_MODELS.contains(Build.MODEL)) {
       return false;
     }
-    String name = info.getName();
-    // QCOM H264 encoder is supported in KITKAT or later.
-    return (name.startsWith(QCOM_PREFIX) && Build.VERSION.SDK_INT >= Build.VERSION_CODES.KITKAT)
-        // Exynos H264 encoder is supported in LOLLIPOP or later.
-        || (name.startsWith(EXYNOS_PREFIX)
-               && Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP);
+    // String name = info.getName();
+    // // QCOM H264 encoder is supported in KITKAT or later.
+    // return (name.startsWith(QCOM_PREFIX) && Build.VERSION.SDK_INT >= Build.VERSION_CODES.KITKAT)
+    //     // Exynos H264 encoder is supported in LOLLIPOP or later.
+    //     || (name.startsWith(EXYNOS_PREFIX)
+    //            && Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP);
+    return true;
   }
 
   private boolean isMediaCodecAllowed(MediaCodecInfo info) {

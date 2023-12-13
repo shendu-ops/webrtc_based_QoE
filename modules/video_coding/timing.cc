@@ -14,6 +14,9 @@
 
 #include <algorithm>
 
+#include <fstream>
+#include <rtc_base/logging.h>
+
 #include "rtc_base/time/timestamp_extrapolator.h"
 #include "system_wrappers/include/clock.h"
 
@@ -170,9 +173,69 @@ void VCMTiming::IncomingTimestamp(uint32_t time_stamp, int64_t now_ms) {
 }
 
 int64_t VCMTiming::RenderTimeMs(uint32_t frame_timestamp,
-                                int64_t now_ms) const {
+                                int64_t now_ms) {           //remove const
   rtc::CritScope cs(&crit_sect_);
-  return RenderTimeMsInternal(frame_timestamp, now_ms);
+  //return RenderTimeMsInternal(frame_timestamp, now_ms);
+  return RenderTimeMsInternal_Self(frame_timestamp, now_ms);
+}
+
+
+
+int64_t VCMTiming::RenderTimeMsInternal_Self(uint32_t frame_timestamp,
+                                        int64_t now_ms) {
+  if (min_playout_delay_ms_ == 0 && max_playout_delay_ms_ == 0) {
+    // Render as soon as possible.
+    return 0;
+  }
+  int64_t estimated_complete_time_ms =
+      ts_extrapolator_->ExtrapolateLocalTime(frame_timestamp);
+  if (estimated_complete_time_ms == -1) {
+    estimated_complete_time_ms = now_ms;
+  }
+
+  // Make sure the actual delay stays in the range of |min_playout_delay_ms_|
+  // and |max_playout_delay_ms_|.
+  int actual_delay = std::max(current_delay_ms_, min_playout_delay_ms_);
+  actual_delay = std::min(actual_delay, max_playout_delay_ms_);
+
+  //add delay
+  /////////////////////////////////////////////////////////////////////////
+
+  if(readfile_flag_){
+    const char* filePath = "/storage/emulated/0/config/delay.txt";
+    std::ifstream file;
+    file.open(filePath);
+    if(!file.is_open()){
+      delay_self_ = 0;
+    }
+    std::string strLine;
+    while(getline(file, strLine)){
+      if(strLine.empty()) continue;
+      else{
+        delay_self_ = std::stoi(strLine);
+      }
+    }
+    readfile_flag_ = false;
+  }
+
+  // const char* root = "/storage/emulated/0/zcj/delay.txt";
+  // FILE* delay_txt = fopen(root, "a+");
+  // if (delay_txt) {
+  //   std::string delay_str = std::to_string(delay_self_)+" "+std::to_string(estimated_complete_time_ms + actual_delay + delay_self_) + "\n";
+
+  //   const char* buf = delay_str.data();
+  //   fwrite(buf, std::strlen(buf), 1, delay_txt);
+    
+  //   fclose(delay_txt);
+  // }
+  // else{
+  //   int errNum = errno;
+  //   RTC_LOG(LS_ERROR) << "mxh delay_txt fopen fail? root:" << root << "reason: " << strerror(errNum);
+  // }
+
+
+
+  return estimated_complete_time_ms + actual_delay + delay_self_;
 }
 
 int64_t VCMTiming::RenderTimeMsInternal(uint32_t frame_timestamp,

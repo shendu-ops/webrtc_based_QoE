@@ -17,6 +17,11 @@
 #include <string>
 #include <vector>
 
+#include <chrono>
+#include <random>
+#include <algorithm>
+#include "rtc_base/logging.h"
+
 #include "api/units/data_rate.h"
 #include "api/video/video_bitrate_allocator.h"
 #include "api/video/video_rotation.h"
@@ -165,6 +170,140 @@ class VideoStreamEncoder : public VideoStreamEncoderInterface,
   void OnEncoderSettingsChanged() RTC_RUN_ON(&encoder_queue_);
 
   // Implements VideoSinkInterface.
+
+//  add our framedropper class
+///////////////////////////////////////////////////////////////////////////////////////
+
+ class FrameDropperSelf{
+    public:
+        FrameDropperSelf()
+            :drop_freq_(INT_MAX), drop_range_(INT_MAX), drop_time_(INT_MAX){}
+        FrameDropperSelf(int drop_freq, int drop_range, int drop_time, uint32_t startTimestamp, std::uniform_int_distribution<int> distribution)
+            :drop_freq_(drop_freq),drop_range_(drop_range),drop_time_(drop_time),frame_counter_(0),startTimestamp_(startTimestamp),startTime(std::chrono::steady_clock::now()),distribution_(distribution){
+                generateRanges();
+            }
+ 
+        bool shouldDropFrame(uint32_t timestamp){
+            if(timestamp == startTimestamp_) return false;
+            int diff = (int) timestamp - startTimestamp_;
+            frame_counter_ = frame_counter_ + (diff/90);
+            startTimestamp_ = timestamp;
+
+            auto currentTime = std::chrono::steady_clock::now();
+            auto elapsedTime = std::chrono::duration_cast<std::chrono::milliseconds>(currentTime - startTime).count();
+
+
+            // const char* root = "/storage/emulated/0/zcj/elapsed.txt";
+            // FILE* before_drop_txt = fopen(root, "a+");
+            // if (before_drop_txt) {
+            // std::string before_drop_str = std::to_string(elapsedTime) + "\n";
+
+            // const char* buf = before_drop_str.data();
+            // fwrite(buf, std::strlen(buf), 1, before_drop_txt);
+            
+            // fclose(before_drop_txt);
+            // }
+            // else{
+            // int errNum = errno;
+            // RTC_LOG(LS_ERROR) << "mxh before_drop_txt fopen fail? root:" << root << "reason: " << strerror(errNum);
+            // }
+
+
+            if(elapsedTime >= drop_range_ && frame_counter_>= drop_time_){
+                generateRanges();
+                frame_counter_=0;
+                startTime = currentTime;
+            }
+            return std::find_if(dropRanges.begin(), dropRanges.end(), [this](const Range& range) {
+            return frame_counter_ >= range.start && frame_counter_ <= range.end;
+            }) != dropRanges.end();
+        }
+
+        bool init(){
+            if(drop_freq_ == INT_MAX && drop_range_==INT_MAX && drop_time_==INT_MAX){
+                return false;
+            }
+            return true;
+        }
+
+        void set(int drop_freq, int drop_range, int drop_time, uint32_t startTimestamp, std::uniform_int_distribution<int> distribution){
+            drop_freq_ = drop_freq;
+            drop_range_ = drop_range;
+            drop_time_ = drop_time;
+            frame_counter_ = 0;
+            startTimestamp_ = startTimestamp;
+            startTime = std::chrono::steady_clock::now();
+            distribution_ = distribution;
+            generateRanges();
+        }
+
+        int get_freq(){
+            return drop_freq_;
+        }
+
+        int get_range(){
+            return drop_range_;
+        }
+        int get_time(){
+            return drop_time_;
+        }
+
+
+    private:
+        struct Range{
+            int start;
+            int end;
+        };
+
+        int drop_freq_;
+        int drop_range_;//ms
+        int drop_time_;
+        int frame_counter_;
+        uint32_t startTimestamp_;
+        std::chrono::steady_clock::time_point startTime;
+        std::vector<Range> dropRanges;
+        std::random_device rd;
+        std::default_random_engine generator {rd()};
+        std::uniform_int_distribution<int> distribution_;
+
+        void generateRanges(){
+            dropRanges.clear();
+            for(int i=0; i<drop_freq_; i++){
+                int start = distribution_(generator);
+                int end = start+drop_time_;
+                dropRanges.push_back({start,end});
+
+            // const char* root = "/storage/emulated/0/zcj/ranges.txt";
+            // FILE* before_drop_txt = fopen(root, "a+");
+            // if (before_drop_txt) {
+            // std::string before_drop_str = std::to_string(start)+" "+std::to_string(end) + "\n";
+
+            // const char* buf = before_drop_str.data();
+            // fwrite(buf, std::strlen(buf), 1, before_drop_txt);
+            
+            // fclose(before_drop_txt);
+            // }
+            // else{
+            // int errNum = errno;
+            // RTC_LOG(LS_ERROR) << "mxh before_drop_txt fopen fail? root:" << root << "reason: " << strerror(errNum);
+            // }
+
+
+
+
+            }
+        }
+ };
+
+
+  FrameDropperSelf frame_dropper_self_ RTC_GUARDED_BY(&encoder_queue_);
+
+  bool readfile_flag_1 = true;
+  bool readfile_flag_2 = true;
+  bool readfile_flag_3 = true;
+
+///////////////////////////////////////////////////////////////////////////////////////////////////
+
   void OnFrame(const VideoFrame& video_frame) override;
   void OnDiscardedFrame() override;
 

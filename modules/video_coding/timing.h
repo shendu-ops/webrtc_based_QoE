@@ -78,7 +78,7 @@ class VCMTiming {
   // Returns the receiver system time when the frame with timestamp
   // |frame_timestamp| should be rendered, assuming that the system time
   // currently is |now_ms|.
-  virtual int64_t RenderTimeMs(uint32_t frame_timestamp, int64_t now_ms) const;
+  virtual int64_t RenderTimeMs(uint32_t frame_timestamp, int64_t now_ms); //remove const
 
   // Returns the maximum time in ms that we can wait for a frame to become
   // complete before we must pass it to the decoder.
@@ -100,6 +100,12 @@ class VCMTiming {
   void SetTimingFrameInfo(const TimingFrameInfo& info);
   absl::optional<TimingFrameInfo> GetTimingFrameInfo();
 
+  //add
+  //////////////////////////////////////////////
+  bool readfile_flag_ = true;
+  int delay_self_ = 0;
+  //////////////////////////////////////////////
+
   enum { kDefaultRenderDelayMs = 10 };
   enum { kDelayMaxChangeMsPerS = 100 };
 
@@ -107,6 +113,13 @@ class VCMTiming {
   int RequiredDecodeTimeMs() const RTC_EXCLUSIVE_LOCKS_REQUIRED(crit_sect_);
   int64_t RenderTimeMsInternal(uint32_t frame_timestamp, int64_t now_ms) const
       RTC_EXCLUSIVE_LOCKS_REQUIRED(crit_sect_);
+  
+  // add
+  ///////////////////////////////////////////////////////////////////////////////////////
+  int64_t RenderTimeMsInternal_Self(uint32_t frame_timestamp, int64_t now_ms)
+      RTC_EXCLUSIVE_LOCKS_REQUIRED(crit_sect_);
+  ///////////////////////////////////////////////////////////////////////////////////////
+
   int TargetDelayInternal() const RTC_EXCLUSIVE_LOCKS_REQUIRED(crit_sect_);
 
  private:

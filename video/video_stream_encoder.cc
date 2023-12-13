@@ -16,6 +16,7 @@
 #include <memory>
 #include <numeric>
 #include <utility>
+#include <fstream>
 
 #include "absl/algorithm/container.h"
 #include "absl/types/optional.h"
@@ -880,6 +881,105 @@ void VideoStreamEncoder::OnFrame(const VideoFrame& video_frame) {
   int64_t post_time_us = rtc::TimeMicros();
   ++posted_frames_waiting_for_encode_;
 
+
+// const char* root = "/storage/emulated/0/zcj/before_drop.txt";
+// FILE* before_drop_txt = fopen(root, "a+");
+// if (before_drop_txt) {
+//   std::string before_drop_str = std::to_string(incoming_frame.timestamp()) + "\n";
+
+//   const char* buf = before_drop_str.data();
+//   fwrite(buf, std::strlen(buf), 1, before_drop_txt);
+  
+//   fclose(before_drop_txt);
+// }
+// else{
+//   int errNum = errno;
+//   RTC_LOG(LS_ERROR) << "mxh before_drop_txt fopen fail? root:" << root << "reason: " << strerror(errNum);
+// }
+
+// const char* root5 = "/storage/emulated/0/zcj/droper_self.txt";
+// FILE* droper_self_txt = fopen(root5, "a+");
+// if (droper_self_txt) {
+//   RTC_DCHECK_RUN_ON(&encoder_queue_); 
+//   std::string droper_self_str = std::to_string(frame_dropper_self_.get_freq())+" "+std::to_string(frame_dropper_self_.get_range())+" "+std::to_string(frame_dropper_self_.get_time()) + "\n";
+
+//   const char* buf = droper_self_str.data();
+//   fwrite(buf, std::strlen(buf), 1, droper_self_txt);
+  
+//   fclose(droper_self_txt);
+// }
+// else{
+//   int errNum = errno;
+//   RTC_LOG(LS_ERROR) << "mxh droper_self_txt fopen fail? root:" << root5 << "reason: " << strerror(errNum);
+// }
+
+// framedrop_self
+RTC_DCHECK_RUN_ON(&encoder_queue_); 
+if(!frame_dropper_self_.init()){
+  int drop_freq = 0;
+  int drop_range = 0;   //ms
+  int drop_time = 0;    //ms
+
+  if(readfile_flag_1){
+    const char* filePath = "/storage/emulated/0/config/drop_freq.txt";
+    std::ifstream file;
+    file.open(filePath);
+    if(!file.is_open()){
+      drop_freq = 0;
+    }
+    std::string strLine;
+    while(getline(file, strLine)){
+      if(strLine.empty()) continue;
+      else{
+        drop_freq = std::stoi(strLine);
+      }
+    }
+    readfile_flag_1 = false;
+  }
+
+  if(readfile_flag_2){
+    const char* filePath = "/storage/emulated/0/config/drop_range.txt";
+    std::ifstream file;
+    file.open(filePath);
+    if(!file.is_open()){
+      drop_range = 0;
+    }
+    std::string strLine;
+    while(getline(file, strLine)){
+      if(strLine.empty()) continue;
+      else{
+        drop_range = std::stoi(strLine);
+      }
+    }
+    readfile_flag_2 = false;
+  }
+
+  if(readfile_flag_3){
+    const char* filePath = "/storage/emulated/0/config/drop_time.txt";
+    std::ifstream file;
+    file.open(filePath);
+    if(!file.is_open()){
+      drop_time = 0;
+    }
+    std::string strLine;
+    while(getline(file, strLine)){
+      if(strLine.empty()) continue;
+      else{
+        drop_time = std::stoi(strLine);
+      }
+    }
+    readfile_flag_3 = false;
+  }
+
+  uint32_t timestamp_drop = incoming_frame.timestamp();
+  if(drop_freq!=0){
+    drop_range = drop_range/drop_freq;
+    drop_freq = 1;
+  }
+  std::uniform_int_distribution<int> distribution(0,std::max(drop_range-drop_time,0));
+  frame_dropper_self_.set(drop_freq, drop_range, drop_time, timestamp_drop, distribution);
+}
+
   encoder_queue_.PostTask(
       [this, incoming_frame, post_time_us, log_stats]() {
         RTC_DCHECK_RUN_ON(&encoder_queue_);
@@ -893,7 +993,7 @@ void VideoStreamEncoder::OnFrame(const VideoFrame& video_frame) {
         bool cwnd_frame_drop =
             cwnd_frame_drop_interval_ &&
             (cwnd_frame_counter_++ % cwnd_frame_drop_interval_.value() == 0);
-        if (posted_frames_waiting_for_encode == 1 && !cwnd_frame_drop) {
+        if (posted_frames_waiting_for_encode == 1 && !cwnd_frame_drop && !frame_dropper_self_.shouldDropFrame(incoming_frame.timestamp())) {
           MaybeEncodeVideoFrame(incoming_frame, post_time_us);
         } else {
           if (cwnd_frame_drop) {
@@ -1066,6 +1166,25 @@ void VideoStreamEncoder::SetEncoderRates(
 void VideoStreamEncoder::MaybeEncodeVideoFrame(const VideoFrame& video_frame,
                                                int64_t time_when_posted_us) {
   RTC_DCHECK_RUN_ON(&encoder_queue_);
+  
+// const char* root = "/storage/emulated/0/zcj/after_drop.txt";
+// FILE* after_drop_txt = fopen(root, "a+");
+// if (after_drop_txt) {
+//   std::string after_drop_str = std::to_string(video_frame.timestamp()) + "\n";
+
+//   const char* buf = after_drop_str.data();
+//   fwrite(buf, std::strlen(buf), 1, after_drop_txt);
+  
+//   fclose(after_drop_txt);
+// }
+// else{
+//   int errNum = errno;
+//   RTC_LOG(LS_ERROR) << "mxh after_drop_txt fopen fail? root:" << root << "reason: " << strerror(errNum);
+// }
+  
+  
+  
+  
   input_state_provider_.OnFrameSizeObserved(video_frame.size());
 
   if (!last_frame_info_ || video_frame.width() != last_frame_info_->width ||
