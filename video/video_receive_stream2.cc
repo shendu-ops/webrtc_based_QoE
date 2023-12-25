@@ -489,6 +489,27 @@ int VideoReceiveStream2::GetBaseMinimumPlayoutDelayMs() const {
 void VideoReceiveStream2::OnFrame(const VideoFrame& video_frame) {
   VideoFrameMetaData frame_meta(video_frame, clock_->CurrentTime());
 
+
+//////////////////////////log
+
+
+  const char* root = "/storage/emulated/0/zcj/frame_size.txt";
+  FILE* frame_size_txt = fopen(root, "a+");
+  if (frame_size_txt) {
+    std::string frame_size_str = std::to_string(video_frame.width())+" "+std::to_string(video_frame.height()) + "\n";
+
+    const char* buf = frame_size_str.data();
+    fwrite(buf, std::strlen(buf), 1, frame_size_txt);
+    
+    fclose(frame_size_txt);
+  }
+  else{
+    int errNum = errno;
+    RTC_LOG(LS_ERROR) << "mxh frame_size_txt fopen fail? root:" << root << "reason: " << strerror(errNum);
+  }
+
+///////////////////////////////
+
   worker_thread_->PostTask(
       ToQueuedTask(task_safety_, [frame_meta, this]() {
         RTC_DCHECK_RUN_ON(&worker_sequence_checker_);
