@@ -490,7 +490,7 @@ void VideoReceiveStream2::OnFrame(const VideoFrame& video_frame) {
   VideoFrameMetaData frame_meta(video_frame, clock_->CurrentTime());
 
 
-//////////////////////////log
+//////////////////////////ztylog
 
 
   const char* root = "/storage/emulated/0/zcj/frame_size.txt";

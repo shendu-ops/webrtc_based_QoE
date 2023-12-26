@@ -395,6 +395,13 @@ void BitrateAllocator::OnNetworkEstimateChanged(TargetTransferRate msg) {
     last_bwe_log_time_ = now;
   }
 
+////////////////////////////////ztylog
+
+  // last_target_bps_ = 300000;
+
+
+//////////////////////////////////
+
   auto allocation = AllocateBitrates(allocatable_tracks_, last_target_bps_);
   auto stable_bitrate_allocation =
       AllocateBitrates(allocatable_tracks_, last_stable_target_bps_);

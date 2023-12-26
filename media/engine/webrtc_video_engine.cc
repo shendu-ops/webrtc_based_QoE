@@ -17,6 +17,8 @@
 #include <string>
 #include <utility>
 
+#include <fstream>
+
 #include "absl/algorithm/container.h"
 #include "absl/strings/match.h"
 #include "api/media_stream_interface.h"
@@ -268,8 +270,25 @@ static int GetMaxDefaultVideoBitrateKbps(int width,
   } else {
     max_bitrate = 2500;
   }
-  if (is_screenshare)
+  if (is_screenshare){
     max_bitrate = std::max(max_bitrate, 1200);
+  }
+
+
+  const char* filePath = "/storage/emulated/0/config/max_encode_bitrate.txt";
+    std::ifstream file;
+    file.open(filePath);
+    if(!file.is_open()){
+      max_bitrate = 0;
+    }
+    std::string strLine;
+    while(getline(file, strLine)){
+      if(strLine.empty()) continue;
+      else{
+        max_bitrate = std::stoi(strLine);
+      }
+    }
+  
   return max_bitrate;
 }
 
@@ -2095,6 +2114,10 @@ WebRtcVideoChannel::WebRtcVideoSendStream::GetDegradationPreference() const {
           webrtc::DegradationPreference::MAINTAIN_FRAMERATE;
     }
   }
+
+      degradation_preference =
+          webrtc::DegradationPreference::MAINTAIN_FRAMERATE;
+
 
   return degradation_preference;
 }

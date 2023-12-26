@@ -34,7 +34,7 @@ class RTPFragmentationHeader;
 // TODO(pbos): Expose these through a public (root) header or change these APIs.
 struct CodecSpecificInfo;
 
-constexpr int kDefaultMinPixelsPerFrame = 320 * 180;
+constexpr int kDefaultMinPixelsPerFrame = 1920*1080; //320 * 180;
 
 class EncodedImageCallback {
  public:
